@@ -13,16 +13,16 @@ struct buffers{
 int buffer[B_size]; 
 int in;
 int out;
+int salida;
 };
 //buffers 
-buffers buff1={{0,0,0,0,0},0,0};//se inicializan valores de los buffer en 0
-buffers buff2={{0,0,0,0,0},0,0};
+buffers buff1={{0,0,0,0,0},0,0,-1};//se inicializan valores de los buffer en 0
+buffers buff2={{0,0,0,0,0},0,0,-1};
 
 //sintaxis es conting_semaphore<TAMAÑO MAXIMO> semaforo (CANTIDA CON LA QUE EMPIEZA)
 std::counting_semaphore<B_size> vacios(B_size); //semaforo vacio empieza lleno, todos los espacios vacios
 std::counting_semaphore<B_size> lleno(0);//semaforo lleno empieza vacio, no hay elementos en el buffer
 std::mutex mut;
-std::mutex mutex_rand;//para que las funciones no llamen rand al mismo tiempo para evitar errores
 
 class cliente{
 	public:
