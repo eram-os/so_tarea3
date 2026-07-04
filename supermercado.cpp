@@ -31,6 +31,7 @@ class cliente{
 	buffers *dir_buffer; //puntero a la variable global para que se sepa a cual de los dos buffer debe acceder el cliente
 	int miliseg;
 	std::chrono::duration<double, std::milli> tiempoEjecucion;
+	//constructor
 	cliente(buffers *buffer){
 		dir_buffer=buffer;
 		n_items=0;
@@ -65,7 +66,6 @@ class cliente{
 
 	auto fin = std::chrono::high_resolution_clock::now();
 	tiempoEjecucion=fin-inicio;
-	std::cout << "El cliente tardo: " << tiempoEjecucion.count() << " milisegundos." << std::endl;
 	}
 };
 
@@ -74,6 +74,8 @@ class cajero{
 		buffers *dir_buffer;//igual que cliente,se usa un puntero para asignar el buffer del cajero
 		int items_a_recuperar;
 		int miliseg;
+		std::chrono::duration<double, std::milli> tiempoEjecucion;//tiempo que demora en ver todos los productos
+		//constructor
 		cajero(buffers *buffer,int items)
 		{
 			dir_buffer=buffer;
@@ -81,8 +83,10 @@ class cajero{
 			miliseg=2000;
 		}
 
+		//funcion para retirar productos de la caja
 		void cajero_productos() {
 
+			auto inicio = std::chrono::high_resolution_clock::now();
 			for (int i = 0; i < items_a_recuperar; i++) {
 				lleno.acquire();// espera ítems disponibles
 				mut.lock(); // entra a sección crítica
@@ -90,12 +94,15 @@ class cajero{
 				//Seccion critica
 				int item = dir_buffer->buffer[dir_buffer->out];
 				dir_buffer->out = (dir_buffer->out + 1) % B_size;
+				dir_buffer->salida=item;//item que va saliendo
 
 				mut.unlock();//sale seccion critica
 				vacios.release();// incrementa espacios libres
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(miliseg));//para salida
 			}
+			auto fin = std::chrono::high_resolution_clock::now();
+			tiempoEjecucion=fin-inicio;
 
-	}
+		}
 };
