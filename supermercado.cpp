@@ -4,7 +4,7 @@
 #include <chrono>//para sleeps
 #include <cstdlib>//Uso de Rand
 #include <ctime>
-
+#include <iostream>
 #define B_size 5 //tamaño buffer
 #define N_item_max 20 //Numero de items maximo por cliente
 
@@ -29,11 +29,12 @@ class cliente{
 	int n_items;
 	int canasta[N_item_max];
 	buffers *dir_buffer; //puntero a la variable global para que se sepa a cual de los dos buffer debe acceder el cliente
-	int items_restantes;
-
+	int miliseg;
+	std::chrono::duration<double, std::milli> tiempoEjecucion;
 	cliente(buffers *buffer){
 		dir_buffer=buffer;
 		n_items=0;
+		miliseg=1000;
 	};
 	//funcion para rellenar la canasta aleatoriamente cada vez que se llame
 	void relleno_canasta(){
@@ -45,6 +46,7 @@ class cliente{
 	};
 	//funcion para entregar items al buffer, es la del profe
 	void cliente_producto() {
+	auto inicio = std::chrono::high_resolution_clock::now();
 		for (int i = 0; i < n_items; i++) {
 			int item = canasta[i];// dato a pasar a caja
 
@@ -58,8 +60,12 @@ class cliente{
 			mut.unlock();//sale seccion critica
 			lleno.release();// incrementa ítems disponibles
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));//para salida
+			std::this_thread::sleep_for(std::chrono::milliseconds(miliseg));//para salida
 		}
+
+	auto fin = std::chrono::high_resolution_clock::now();
+	tiempoEjecucion=fin-inicio;
+	std::cout << "El cliente tardo: " << tiempoEjecucion.count() << " milisegundos." << std::endl;
 	}
 };
 
@@ -67,10 +73,12 @@ class cajero{
 	public:
 		buffers *dir_buffer;//igual que cliente,se usa un puntero para asignar el buffer del cajero
 		int items_a_recuperar;
+		int miliseg;
 		cajero(buffers *buffer,int items)
 		{
 			dir_buffer=buffer;
 			items_a_recuperar=items;
+			miliseg=2000;
 		}
 
 		void cajero_productos() {
@@ -86,7 +94,7 @@ class cajero{
 				mut.unlock();//sale seccion critica
 				vacios.release();// incrementa espacios libres
 
-				std::this_thread::sleep_for(std::chrono::milliseconds(2000));//para salida
+				std::this_thread::sleep_for(std::chrono::milliseconds(miliseg));//para salida
 			}
 
 	}
