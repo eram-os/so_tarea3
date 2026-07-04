@@ -152,6 +152,62 @@ void config_tiempos_valores(){
     }
 };
 
+void ventana_inicio(){
+    clear();
+    box(stdscr, 0, 0);
+
+    int yMax, xMax;
+    getmaxyx(stdscr, yMax, xMax);
+
+    const int ANCHO = 14;
+    const int ALTO = 5;
+    const int ESPACIO = 1;
+
+    // Posición del primer cajero
+    int cajero1_x = 5;
+    int cajero1_y = 4;
+
+    // Posición del segundo cajero
+    int cajero2_x = 5;
+    int cajero2_y = cajero1_y + ALTO + 6;
+
+    // CAJERO 1
+    mvprintw(cajero1_y - 1, cajero1_x + 30, "Cajero 1");
+    mvprintw(cajero1_y + 2, cajero1_x - 3, "S");	//S de Supermercado
+    mvprintw(cajero1_y + 2, cajero1_x + (ANCHO + ESPACIO) * 5 + 2, "Cliente 1"); //Cliente
+
+    for (int i = 0; i < 5; i++){
+        int x = cajero1_x + i * (ANCHO + ESPACIO);
+        WINDOW *producto = newwin(ALTO, ANCHO, cajero1_y, x);
+        box(producto, 0, 0);
+        string nombre = productos[i];
+
+        mvwprintw(producto,2,(ANCHO - nombre.length()) / 2,"%s",nombre.c_str());
+        wrefresh(producto);
+    }
+
+    // CAJERO 2
+    mvprintw(cajero2_y - 1, cajero2_x + 30, "Cajero 2");
+    mvprintw(cajero2_y + 2, cajero2_x - 3, "S");
+    mvprintw(cajero2_y + 2,
+             cajero2_x + (ANCHO + ESPACIO) * 5 + 2,
+             "Cliente 2");
+
+    for (int i = 0; i < 5; i++){
+        int x = cajero2_x + i * (ANCHO + ESPACIO);
+        WINDOW *producto = newwin(ALTO, ANCHO, cajero2_y, x);
+        box(producto, 0, 0);
+        string nombre = productos[i];
+       
+		mvwprintw(producto,2,(ANCHO - nombre.length()) / 2,"%s",nombre.c_str());
+        wrefresh(producto);
+    }
+
+    refresh();
+    getch();
+}
+
+
 int main()
 {
     initscr();               // Iniciar ncurses
@@ -230,10 +286,8 @@ int main()
         {
             switch(highlight){
                 case 0:
-                {
-					//FUNCION PLACEHOLDER
-                    break;
-                }
+				ventana_inicio();
+				break;
 
 				case 1:
 				config_tiempos();
