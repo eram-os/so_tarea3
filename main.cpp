@@ -22,10 +22,10 @@ string productos[10]={
 
 int tiempo_ms = 1000;
 
-void config_tiempos();
-void config_tiempos_valores();
+void config_tiempos(cliente &c_caja1,cliente &c_caja2,cajero &caja1,cajero &caja2);
+void config_tiempos_valores(int &valor_tiempo);
 
-void config_tiempos(){
+void config_tiempos(cliente &c_caja1,cliente &c_caja2,cajero &caja1,cajero &caja2){
     int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
 
@@ -81,19 +81,19 @@ void config_tiempos(){
                 switch(highlight)
                 {
                     case 0:
-                        config_tiempos_valores();   // Tiempo Cajero 1
+                        config_tiempos_valores(caja1.miliseg);   // Tiempo Cajero 1
                         break;
 
                     case 1:
-                        config_tiempos_valores();   // Tiempo Cajero 2
+                        config_tiempos_valores(caja2.miliseg);   // Tiempo Cajero 2
                         break;
 
                     case 2:
-                        config_tiempos_valores();   // Tiempo Clientes Cajero 1
+                        config_tiempos_valores(c_caja1.miliseg);   // Tiempo Clientes Cajero 1
                         break;
 
                     case 3:
-                        config_tiempos_valores();   // Tiempo Clientes Cajero 2
+                        config_tiempos_valores(c_caja2.miliseg);   // Tiempo Clientes Cajero 2
                         break;
 
                     case 4:
@@ -106,14 +106,14 @@ void config_tiempos(){
     }
 }
 
-void config_tiempos_valores(){
+void config_tiempos_valores(int &valor_tiempo){
     int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
 
     WINDOW *menuwin = newwin(8, 50, 7, (xMax - 50) / 2);
     keypad(menuwin, true);
 
-    int valor = tiempo_ms;
+    int valor = valor_tiempo;
     int choice;
 
     while (1)
@@ -145,7 +145,7 @@ void config_tiempos_valores(){
                 break;
 
             case 10:
-                tiempo_ms = valor;
+                valor_tiempo = valor;
                 delwin(menuwin);
                 return;
         }
@@ -154,12 +154,39 @@ void config_tiempos_valores(){
 
 void ventana_inicio();
 
+int rellenar_fila(queue<cliente> &fila, cliente c,int n_clientes)//rellena la fila con n_clientes
+{
+	int n_items_totales_caja=0;
+	for(int i=0;i<n_clientes;i++)
+	{
+		c.relleno_canasta();
+		n_items_totales_caja+=c.n_items;
+		c.miliseg=50;
+		fila.push(c);
+	}
+	return n_items_totales_caja;//se retorna los items totales de la caja
+
+}
 int main()
 {
+    srand(time(NULL));//inicializa random para el programa
+
+    int n_clientes=0;//numero de clientes que van a haber por caja
+		    
+    //elementos caja1
+    queue<cliente> clientes_caja1;//fila de clientes para caja1
+    cliente c_caja1(&buff1);//clientes caja 1 usan buffer1
+    cajero caja1(&buff1);//cajero 1 buffer 1
+
+    //elementos caja2
+    queue<cliente> clientes_caja2;//fila de clientes para caja2
+    cliente c_caja2(&buff2);//clientes caja 2 usan buffer2
+    cajero caja2(&buff2);//cajero 2 buffer 2
+    
+
     initscr();               // Iniciar ncurses
     noecho();                // No mostrar teclas
     cbreak();                // Entrada inmediata
-
 	int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
     box(stdscr, 0, 0);
@@ -232,15 +259,15 @@ int main()
         {
             switch(highlight){
                 case 0:
-				ventana_inicio();
-				break;
+			//ventana_inicio();
+			break;
 
-				case 1:
-				config_tiempos();
-				break;
+		case 1:
+			config_tiempos(c_caja1,c_caja2,caja1,caja2);
+			break;
 
-                case 2:
-                endwin();
+		case 2:
+			endwin();
                 return 0;
             }
         }
