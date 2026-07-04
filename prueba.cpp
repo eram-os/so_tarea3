@@ -29,29 +29,46 @@ int main()
 		cliente c1=cliente(&buff1);
 		c1.relleno_canasta();
 		items_totales_caja1+=c1.n_items;
+		c1.miliseg=50;
 		clientes_caja1.push(c1);
 	}
+	cajero caja1(&buff1,items_totales_caja1);
 	cout <<"N clientes: "<<n_clientes<<"\n";
 	cout << "N items totales "<<items_totales_caja1<<"\n";
 	int i=1;
-	while(!clientes_caja1.empty())
+	//impresion cliente canasta
+
+	queue<cliente> clientes_caja1_copy=clientes_caja1;//fila de clientes para caja1
+	
+	while(!clientes_caja1_copy.empty())
 	{
-		cliente aux=clientes_caja1.front();
+		cliente aux=clientes_caja1_copy.front();
 		cout<<"Cliente "<<i<<" tiene "<<aux.n_items<<" items"<<"\n";
 		for(int j=0;j<aux.n_items;j++)
 		{
 			cout<<"item"<<j<<" canasta:"<<productos[aux.canasta[j]]<<"\n";
 		}
-		clientes_caja1.pop();
+		clientes_caja1_copy.pop();
 		i++;
 	}
+	caja1.miliseg=100;
+	thread t2(&cajero::cajero_productos,&caja1);//parte cajero
+	vector<chrono::duration<double, std::milli> > tiempos_finales;
+	while(!clientes_caja1.empty){
+	thread t1(&cliente::cliente_producto,&clientes_caja1.front());
+	t1.join();
+	tiempos_finales.pushback(clientes_caja1.front().tiempoEjecucion);
+	clientes_caja1.pop();
+	}
+
+	t2.join();
+
+
 	//cliente c1(&buff1);
 	//cajero caj1(&buff1,c1.n_items);
 
 	//cout<<"N items cliente:"<<c1.n_items<<"\n";
-	//thread t1(&cliente::cliente_producto,&c1);
-	//
-	//thread t2(&cajero::cajero_productos,&caj1);
+	
 	//for(int j=0;j<5;j++)//imprime buffer cada 5 seg para ver cambios
 	//{
 	//	for(int i=0;i<5;i++)
@@ -60,8 +77,6 @@ int main()
 	//	}
 	//	std::this_thread::sleep_for(std::chrono::milliseconds(5000));//para salida
 	//}
-	//t1.join();
-	//t2.join();
 
 	return 0;
 }
