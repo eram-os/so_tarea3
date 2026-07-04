@@ -26,7 +26,7 @@ void config_tiempo(){
     int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
 
-    WINDOW *menuwin = newwin(8, 50, 12, (xMax - 50) / 2);
+    WINDOW *menuwin = newwin(8, 50, 7, (xMax - 50) / 2);
     keypad(menuwin, true);
 
     int valor = tiempo_ms;
@@ -38,8 +38,8 @@ void config_tiempo(){
         box(menuwin, 0, 0);
 
         string titulo = "Tiempo entre acciones";
-        string tiempo = to_string(valor) + " ms";
-        string ayuda = "<-   ->   ENTER";
+		string tiempo = "<   " + to_string(valor) + " ms   >";
+        string ayuda = "ENTER";
 
         mvwprintw(menuwin, 2, (50 - titulo.length()) / 2, "%s", titulo.c_str());
         mvwprintw(menuwin, 4, (50 - tiempo.length()) / 2, "%s", tiempo.c_str());
