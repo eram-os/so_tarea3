@@ -20,6 +20,7 @@ string productos[10]={
  "Cafe"
 };
 
+int tiempo_ms = 1000;
 
 void config_tiempo(){
     int yMax, xMax;
@@ -77,7 +78,6 @@ int main()
     getmaxyx(stdscr, yMax, xMax);
     box(stdscr, 0, 0);
 
-	int tiempo_ms = 1000;
     // TITULO
     string titulo[] ={
 "  ____  _   _ ____  _____ ____  __  __ _____ ____   ____    _    ____   ___ ",
