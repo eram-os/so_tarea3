@@ -40,9 +40,9 @@ int main()
 	cliente c_caja1(&buff1);
 	c_caja1.miliseg=100;
 	int items_totales_caja1=rellenar_fila(clientes_caja1,c_caja1,n_clientes);
-	cajero caja1(&buff1,items_totales_caja1);
+	cajero caja1(&buff1);
 	cout <<"N clientes: "<<n_clientes<<"\n";
-	cout << "N items totales "<<caja1.items_a_recuperar<<"\n";
+	cout << "N items totales "<<items_totales_caja1<<"\n";
 
 	//int i=1;
 //	queue<cliente> clientes_caja1_copy=clientes_caja1;//fila de clientes para caja1
@@ -59,7 +59,7 @@ int main()
 //		i++;
 //	}
 	caja1.miliseg=500;
-	thread t2(&cajero::cajero_productos,&caja1);//parte cajero
+	thread t2(&cajero::cajero_productos,&caja1,items_totales_caja1);//parte cajero
 	vector<chrono::duration<double, std::milli> > tiempos_finales;
 	while(!clientes_caja1.empty()){
 		thread t1(&cliente::cliente_producto,&clientes_caja1.front());

@@ -72,19 +72,17 @@ class cliente{
 class cajero{
 	public:
 		buffers *dir_buffer;//igual que cliente,se usa un puntero para asignar el buffer del cajero
-		int items_a_recuperar;
 		int miliseg;
 		std::chrono::duration<double, std::milli> tiempoEjecucion;//tiempo que demora en ver todos los productos
 		//constructor
-		cajero(buffers *buffer,int items)
+		cajero(buffers *buffer)
 		{
 			dir_buffer=buffer;
-			items_a_recuperar=items;
 			miliseg=2000;
 		}
 
 		//funcion para retirar productos de la caja
-		void cajero_productos() {
+		void cajero_productos(int items_a_recuperar) {
 
 			auto inicio = std::chrono::high_resolution_clock::now();
 			for (int i = 0; i < items_a_recuperar; i++) {
