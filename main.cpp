@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <curses.h>
+
 using namespace std;
 //para imprimir
 string productos[10]={
@@ -20,28 +22,95 @@ string productos[10]={
 
 int main()
 {
-	cliente c1(&buff1);
-	cajero caj1(&buff1,c1.n_items);
+    initscr();               // Iniciar ncurses
+    noecho();                // No mostrar teclas
+    cbreak();                // Entrada inmediata
 
+	int yMax, xMax;
+    getmaxyx(stdscr, yMax, xMax);
+    box(stdscr, 0, 0);
 
-	cout<<"N items cliente:"<<c1.n_items<<"\n";
-	for(int i=0;i<c1.n_items;i++)
-	{
-		cout<<"item"<<i<<" canasta:"<<productos[c1.canasta[i]]<<"\n";
-	}
-	thread t1(&cliente::cliente_producto,&c1);
-	
-	thread t2(&cajero::cajero_productos,&caj1);
-	for(int j=0;j<5;j++)//imprime buffer cada 5 seg para ver cambios
-	{
-		for(int i=0;i<5;i++)
-		{
-		cout<<"item"<<i<<" buffer:"<<productos[buff1.buffer[i]]<<"\n";
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(5000));//para salida
-	}
-	t1.join();
-	t2.join();
+    // TITULO
+    string titulo[] ={
+"  ____  _   _ ____  _____ ____  __  __ _____ ____   ____    _    ____   ___ ",
+" / ___|| | | |  _ \\| ____|  _ \\|  \\/  | ____|  _ \\ / ___|  / \\  |  _ \\ / _ \\",
+" \\___ \\| | | | |_) |  _| | |_) | |\\/| |  _| | |_) | |     / _ \\ | | | | | | |",
+"  ___) | |_| |  __/| |___|  _ <| |  | | |___|  _ <| |___ / ___ \\| |_| | |_| |",
+" |____/ \\___/|_|   |_____|_| \\_\\_|  |_|_____|_| \\_\\\\____/_/   \\_\\____/ \\___/ "
+    };
 
-	return 0;
+    int altura_titulo = 5;
+
+    attron(A_BOLD);
+
+    for(int i = 0; i < altura_titulo; i++) {
+        mvprintw(i + 1,(xMax - titulo[i].length()) / 2, titulo[i].c_str());
+    }
+
+    attroff(A_BOLD);
+
+    //crear ventana
+    WINDOW *menuwin = newwin(8, xMax - 10, altura_titulo + 2, 5);
+    box(menuwin,0,0);
+    refresh();
+    wrefresh(menuwin);
+
+    keypad(menuwin,true); //habilitar flechas
+
+    string choices[2] =
+    {
+        "Iniciar",
+        "Salir"
+    };
+	int choice;
+    int highlight = 0;
+    
+    while(1)
+    {
+        box(menuwin,0,0);
+
+        int ancho = getmaxx(menuwin);
+        for(int i=0;i<2;i++)
+        {
+            int x = (ancho - choices[i].length())/2;
+            if(i==highlight)
+            wattron(menuwin,A_REVERSE);
+            mvwprintw(menuwin,i+2,x,choices[i].c_str());
+            wattroff(menuwin,A_REVERSE);
+        }
+        wrefresh(menuwin);
+        choice = wgetch(menuwin);
+
+        switch(choice)
+        {
+            case KEY_UP:
+                highlight = (highlight - 1 + 2) % 2;
+                break;
+            case KEY_DOWN:
+                highlight = (highlight + 1) % 2;
+                break;
+            default:
+                break;
+        }
+
+        if(choice == 10)
+        {
+            switch(highlight){
+                case 0:
+                {
+					//FUNCION PLACEHOLDER
+                    break;
+                }
+
+                case 1:
+                endwin();
+                return 0;
+            }
+        }
+    }
+
+    getch();
+    endwin();
+
+    return 0;
 }
