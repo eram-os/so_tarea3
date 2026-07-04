@@ -22,7 +22,88 @@ string productos[10]={
 
 int tiempo_ms = 1000;
 
-void config_tiempo(){
+void config_tiempos(){
+    int yMax, xMax;
+    getmaxyx(stdscr, yMax, xMax);
+
+    WINDOW *menuwin = newwin(10, 50, 7, (xMax - 50) / 2);
+    keypad(menuwin, true);
+
+    string opciones[5] =
+    {
+        "Cajero 1",
+        "Cajero 2",
+        "Clientes Cajero 1",
+        "Clientes Cajero 2",
+        "Volver"
+    };
+
+    int highlight = 0;
+    int choice;
+
+    while(1)
+    {
+        werase(menuwin);
+        box(menuwin,0,0);
+
+        int ancho = getmaxx(menuwin);
+
+        for(int i=0;i<5;i++)
+        {
+            int x = (ancho - opciones[i].length()) / 2;
+
+            if(i == highlight)
+                wattron(menuwin, A_REVERSE);
+
+            mvwprintw(menuwin, i + 1, x, "%s", opciones[i].c_str());
+
+            wattroff(menuwin, A_REVERSE);
+        }
+
+        wrefresh(menuwin);
+        choice = wgetch(menuwin);
+
+        switch(choice)
+        {
+            case KEY_UP:
+                highlight = (highlight - 1 + 5) % 5;
+                break;
+
+            case KEY_DOWN:
+                highlight = (highlight + 1) % 5;
+                break;
+
+            case 10:
+
+                switch(highlight)
+                {
+                    case 0:
+                        config_tiempos_valores();   // Tiempo Cajero 1
+                        break;
+
+                    case 1:
+                        config_tiempos_valores();   // Tiempo Cajero 2
+                        break;
+
+                    case 2:
+                        config_tiempos_valores();   // Tiempo Clientes Cajero 1
+                        break;
+
+                    case 3:
+                        config_tiempos_valores();   // Tiempo Clientes Cajero 2
+                        break;
+
+                    case 4:
+                        delwin(menuwin);
+                        return;
+                }
+
+                break;
+        }
+    }
+}
+
+void config_tiempos_valores(){
     int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
 
@@ -152,7 +233,7 @@ int main()
                 }
 
 				case 1:
-				config_tiempo();
+				config_tiempos();
 				break;
 
                 case 2:
