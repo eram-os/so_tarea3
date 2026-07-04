@@ -29,7 +29,7 @@ void config_tiempos(){
     int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
 
-    WINDOW *menuwin = newwin(10, 50, 7, (xMax - 50) / 2);
+    WINDOW *menuwin = newwin(8, 50, 7, (xMax - 50) / 2);
     keypad(menuwin, true);
 
     string opciones[5] =
