@@ -102,7 +102,7 @@ class cajero{
 				std::this_thread::sleep_for(std::chrono::milliseconds(miliseg));//para salida
 			}
 			auto fin = std::chrono::high_resolution_clock::now();
-			tiempoEjecucion=fin-inicio;
+			this->tiempoEjecucion=fin-inicio;
 
 		}
 };
