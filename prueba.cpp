@@ -20,33 +20,35 @@ string productos[10]={
 
 int main()
 {
-	srand(time(NULL));//aleatoria cantidad de clientes
-	int n_clientes=(rand()%10)+1//max 10 clientes minimo 1
-	queue<cliente> clientes_caja1;
+	srand(time(NULL));
+	int n_clientes=(rand()%9)+1;//max 10 clientes minimo 1
+	queue<cliente> clientes_caja1;//fila de clientes para caja1
 	int items_totales_caja1=0;//variable que va a contener cantidad total de items a pasar por caja
 	for(int i=0;i<n_clientes;i++)
 	{
-		cliente c1(&buff1);
+		cliente c1=cliente(&buff1);
+		c1.relleno_canasta();
 		items_totales_caja1+=c1.n_items;
 		clientes_caja1.push(c1);
 	}
-
 	cout <<"N clientes: "<<n_clientes<<"\n";
 	cout << "N items totales "<<items_totales_caja1<<"\n";
 	int i=1;
-	while(clientes_caja1.empty())
+	while(!clientes_caja1.empty())
 	{
-		cliente aux=clientes_caja1.top();
-		cout<<
+		cliente aux=clientes_caja1.front();
+		cout<<"Cliente "<<i<<" tiene "<<aux.n_items<<" items"<<"\n";
+		for(int j=0;j<aux.n_items;j++)
+		{
+			cout<<"item"<<j<<" canasta:"<<productos[aux.canasta[j]]<<"\n";
+		}
+		clientes_caja1.pop();
+		i++;
 	}
 	//cliente c1(&buff1);
 	//cajero caj1(&buff1,c1.n_items);
 
 	//cout<<"N items cliente:"<<c1.n_items<<"\n";
-	//for(int i=0;i<c1.n_items;i++)
-	//{
-	//	cout<<"item"<<i<<" canasta:"<<productos[c1.canasta[i]]<<"\n";
-	//}
 	//thread t1(&cliente::cliente_producto,&c1);
 	//
 	//thread t2(&cajero::cajero_productos,&caj1);
