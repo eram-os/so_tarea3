@@ -29,18 +29,21 @@ class cliente{
 	int n_items;
 	int canasta[N_item_max];
 	buffers *dir_buffer; //puntero a la variable global para que se sepa a cual de los dos buffer debe acceder el cliente
+	int items_restantes;
 
 	cliente(buffers *buffer){
 		dir_buffer=buffer;
-		mutex_rand.lock();
-		srand(time(NULL));
-		n_items=(rand()%N_item_max);//cantidad de items en canasta es aleatorio
-		for(int i=0;i< n_items;i++)
+		n_items=0;
+	};
+	//funcion para rellenar la canasta aleatoriamente cada vez que se llame
+	void relleno_canasta(){
+		this->n_items=(rand()%(N_item_max-1))+1;//cantidad de items en canasta es aleatorio entre 1-N_item_max
+		for(int i=0;i< this->n_items;i++)
 		{
-			canasta[i]=rand()%10;//item aleatorio, valor para printear despues esta entre 0-9
+			this->canasta[i]=rand()%9;//item aleatorio, valor para printear despues esta entre 0-9
 		}
-		mutex_rand.unlock();
-	}
+	};
+	//funcion para entregar items al buffer, es la del profe
 	void cliente_producto() {
 		for (int i = 0; i < n_items; i++) {
 			int item = canasta[i];// dato a pasar a caja
