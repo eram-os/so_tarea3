@@ -20,6 +20,53 @@ string productos[10]={
  "Cafe"
 };
 
+
+void config_tiempo(){
+    int yMax, xMax;
+    getmaxyx(stdscr, yMax, xMax);
+
+    WINDOW *menuwin = newwin(8, 50, 12, (xMax - 50) / 2);
+    keypad(menuwin, true);
+
+    int valor = tiempo_ms;
+    int choice;
+
+    while (1)
+    {
+        werase(menuwin);
+        box(menuwin, 0, 0);
+
+        string titulo = "Tiempo entre acciones";
+        string tiempo = to_string(valor) + " ms";
+        string ayuda = "<-   ->   ENTER";
+
+        mvwprintw(menuwin, 2, (50 - titulo.length()) / 2, "%s", titulo.c_str());
+        mvwprintw(menuwin, 4, (50 - tiempo.length()) / 2, "%s", tiempo.c_str());
+        mvwprintw(menuwin, 6, (50 - ayuda.length()) / 2, "%s", ayuda.c_str());
+
+        wrefresh(menuwin);
+        choice = wgetch(menuwin);
+
+        switch(choice)
+        {
+            case KEY_LEFT:
+                if(valor > 500)
+                    valor -= 100;
+                break;
+
+            case KEY_RIGHT:
+                if(valor < 5000)
+                    valor += 100;
+                break;
+
+            case 10:
+                tiempo_ms = valor;
+                delwin(menuwin);
+                return;
+        }
+    }
+};
+
 int main()
 {
     initscr();               // Iniciar ncurses
@@ -30,6 +77,7 @@ int main()
     getmaxyx(stdscr, yMax, xMax);
     box(stdscr, 0, 0);
 
+	int tiempo_ms = 1000;
     // TITULO
     string titulo[] ={
 "  ____  _   _ ____  _____ ____  __  __ _____ ____   ____    _    ____   ___ ",
@@ -57,9 +105,10 @@ int main()
 
     keypad(menuwin,true); //habilitar flechas
 
-    string choices[2] =
+    string choices[3] =
     {
         "Iniciar",
+		"Config",
         "Salir"
     };
 	int choice;
@@ -70,7 +119,7 @@ int main()
         box(menuwin,0,0);
 
         int ancho = getmaxx(menuwin);
-        for(int i=0;i<2;i++)
+        for(int i=0;i<3;i++)
         {
             int x = (ancho - choices[i].length())/2;
             if(i==highlight)
@@ -84,10 +133,10 @@ int main()
         switch(choice)
         {
             case KEY_UP:
-                highlight = (highlight - 1 + 2) % 2;
+                highlight = (highlight - 1 + 3) % 3;
                 break;
             case KEY_DOWN:
-                highlight = (highlight + 1) % 2;
+                highlight = (highlight + 1) % 3;
                 break;
             default:
                 break;
@@ -102,7 +151,11 @@ int main()
                     break;
                 }
 
-                case 1:
+				case 1:
+				config_tiempo();
+				break;
+
+                case 2:
                 endwin();
                 return 0;
             }
