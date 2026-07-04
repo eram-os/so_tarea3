@@ -51,16 +51,19 @@ int main()
 		clientes_caja1_copy.pop();
 		i++;
 	}
-	caja1.miliseg=100;
+	caja1.miliseg=500;
 	thread t2(&cajero::cajero_productos,&caja1);//parte cajero
 	vector<chrono::duration<double, std::milli> > tiempos_finales;
-	while(!clientes_caja1.empty){
-	thread t1(&cliente::cliente_producto,&clientes_caja1.front());
-	t1.join();
-	tiempos_finales.pushback(clientes_caja1.front().tiempoEjecucion);
-	clientes_caja1.pop();
+	while(!clientes_caja1.empty()){
+		thread t1(&cliente::cliente_producto,&clientes_caja1.front());
+		t1.join();
+		tiempos_finales.push_back(clientes_caja1.front().tiempoEjecucion);
+		clientes_caja1.pop();
 	}
-
+	for(auto tiempos: tiempos_finales)
+	{
+		cout<<"tiempo cliente:"<<tiempos<<"\n";
+	}
 	t2.join();
 
 
@@ -68,7 +71,7 @@ int main()
 	//cajero caj1(&buff1,c1.n_items);
 
 	//cout<<"N items cliente:"<<c1.n_items<<"\n";
-	
+
 	//for(int j=0;j<5;j++)//imprime buffer cada 5 seg para ver cambios
 	//{
 	//	for(int i=0;i<5;i++)
