@@ -22,6 +22,9 @@ string productos[10]={
 
 int tiempo_ms = 1000;
 
+void config_tiempos();
+void config_tiempos_valores();
+
 void config_tiempos(){
     int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
