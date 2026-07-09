@@ -8,7 +8,7 @@
 using namespace std;
 //para imprimir
 string productos[10]={
- "Arvejas",
+ "",
  "Banana",
  "Tomate",
  "Ketchup",
