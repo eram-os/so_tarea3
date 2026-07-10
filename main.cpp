@@ -153,7 +153,26 @@ void config_tiempos_valores(int &valor_tiempo){
     }
 };
 mutex mut_curses;//si se llama elementos de curses al mismo tiempo se tiende a corromper la pantalla
-void correr_caja(queue<cliente> &fila_clientes,WINDOW *buffer_caja[B_size], WINDOW *cliente_actual,buffers *b)
+void refresh_buffer_pantalla(WINDOW *buffer[B_size], buffers *b)
+{
+
+    for(int i=0;i<B_size;i++){
+	mut_curses.lock();
+	werase(buffer[i]);
+	box(buffer[i],0,0);
+
+	mut.lock();//mutex acceso buffer
+	mvwprintw(buffer[i],3,2,productos[b->buffer[i]].c_str());//dentro de la caja i, le pone el string 
+								 //que corresponde a la posicion que esta 
+								 //guardada en el buffer
+	mut.unlock();
+
+	wrefresh(buffer[i]);
+	mut_curses.unlock();
+    }
+
+}
+void correr_cliente(queue<cliente> &fila_clientes,WINDOW *buffer_caja[B_size], WINDOW *cliente_actual,buffers *b)
 {
 	//funcion corre un hilo extra que va correr
 	//metodo de cliente para que empieze a ver el buffer
@@ -179,6 +198,8 @@ void correr_caja(queue<cliente> &fila_clientes,WINDOW *buffer_caja[B_size], WIND
 				});
 
 
+
+		//imprimir cliente actual
 		mut_curses.lock();
 		werase(cliente_actual);
 		mvwprintw(cliente_actual,2,2,"Cliente: %d",n_cliente1);
@@ -192,20 +213,7 @@ void correr_caja(queue<cliente> &fila_clientes,WINDOW *buffer_caja[B_size], WIND
 		while(terminado)
 		{
 			//vuelve a refrescar buffer
-			for(int i=0;i<B_size;i++){
-				mut_curses.lock();
-				werase(buffer_caja[i]);
-				box(buffer_caja[i],0,0);
-
-				mut.lock();//mutex acceso buffer
-				mvwprintw(buffer_caja[i],3,2,productos[b->buffer[i]].c_str());//dentro de la caja i, le pone el string 
-												 //que corresponde a la posicion que esta 
-												 //guardada en el buffer
-				mut.unlock();
-
-				wrefresh(buffer_caja[i]);
-				mut_curses.unlock();
-			}
+		    refresh_buffer_pantalla(buffer_caja,b);
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			
 		}
@@ -214,6 +222,27 @@ void correr_caja(queue<cliente> &fila_clientes,WINDOW *buffer_caja[B_size], WIND
 		fila_clientes.pop();
 		
 	}
+
+}
+void correr_caja(cajero caja,WINDOW *buffer[B_size], buffers *b,int items)
+{
+
+    atomic<bool> terminado{true};// bool para cuando termine
+    //lambda para hilo, corre caja y avisa cuando acabe
+    thread t1([&caja, &terminado,&items](){
+	    caja.cajero_productos(items);
+	    terminado = false;
+	    });
+
+		while(terminado)
+		{
+		    //vuelve a refrescar buffer
+		    refresh_buffer_pantalla(buffer,b);
+		    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+		}
+		if (t1.joinable())
+		    t1.join();
 
 }
 // funcion recibe cajas con sus filas iniciadas y con la cantidad de items maximos a usar por fila. tambien la coordenada y, para dibujar
@@ -253,19 +282,19 @@ void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero c
 	//cajero 2 
 	WINDOW *cliente_actual2;
 	if(n_cajas==2){
-		cliente_actual2=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja2,5+ANCHO_PRODUCTO*B_size);
+		cliente_actual2=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja2,ancho_buffer_total);
 		mvprintw(coordenaday_caja2-1, 5+ANCHO_PRODUCTO*B_size,"Clientes totales: %ld",fila_clientes2.size());
 		//funcion clientes
 	}
 
 	//aca se corren threads
-	thread t1(&cajero::cajero_productos,&caja1,item_t_c1);//parte cajero 1
-	thread t2(&cajero::cajero_productos,&caja2,item_t_c2);//parte cajero 2
+	thread t1(correr_caja,caja1,buffer_caja1,&buff1,item_t_c1);//parte cajero 1
+	thread t2(correr_caja,caja2,buffer_caja2,&buff2,item_t_c2);//parte cajero 2
 
-	thread t3(correr_caja,ref(fila_clientes1),buffer_caja1, cliente_actual1,&buff1);//se corre la funcion en thread
+	thread t3(correr_cliente,ref(fila_clientes1),buffer_caja1, cliente_actual1,&buff1);//se corre la funcion en thread
 											    //ref() hace que el hilo reciba por
 											    //referencia el valor o si no solo lo copia
-	thread t4(correr_caja,ref(fila_clientes2),buffer_caja2, cliente_actual2,&buff2);//cliente 2
+	thread t4(correr_cliente,ref(fila_clientes2),buffer_caja2, cliente_actual2,&buff2);//cliente 2
 
 	if(t1.joinable())
 		t1.join();

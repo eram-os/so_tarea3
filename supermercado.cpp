@@ -16,8 +16,8 @@ int out;
 int salida;
 };
 //buffers 
-buffers buff1={{0,0,0,0,0},0,0,-1};//se inicializan valores de los buffer en 0
-buffers buff2={{0,0,0,0,0},0,0,-1};
+buffers buff1={{0,0,0,0,0},0,0,0};//se inicializan valores de los buffer en 0
+buffers buff2={{0,0,0,0,0},0,0,0};
 
 //sintaxis es conting_semaphore<TAMAÑO MAXIMO> semaforo (CANTIDA CON LA QUE EMPIEZA)
 std::counting_semaphore<B_size> vacios(B_size); //semaforo vacio empieza lleno, todos los espacios vacios
