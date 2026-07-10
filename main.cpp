@@ -152,7 +152,64 @@ void config_tiempos_valores(int &valor_tiempo){
     }
 };
 
-void ventana_inicio();
+void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero caja1, int item_t_c1){
+
+
+
+	int ANCHO_PRODUCTO = 14;//tamaño de string + espacios
+	int ALTO_CAJERO = 5;//alto de cada caja
+	int PRODUCTOS = B_size;//tamaño buffer
+	int ancho_buffer_total= PRODUCTOS * ANCHO_PRODUCTO + (PRODUCTOS + 1);
+	WINDOW *buffer_caja1[B_size];
+	for (int i =0;i<PRODUCTOS;i++)
+	{
+		buffer_caja1[i]=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,5+i*ANCHO_PRODUCTO);
+		box(buffer_caja1[i],0,0);
+		wrefresh(buffer_caja1[i]);
+		refresh();
+	}
+
+	thread t2(&cajero::cajero_productos,&caja1,item_t_c1);//parte cajero
+	WINDOW *cliente_actual1=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,5+ANCHO_PRODUCTO*B_size);
+	box(cliente_actual1,0,0);
+	int n_cliente=1;
+	while(!fila_clientes1.empty())
+	{
+		thread t1(&cliente::cliente_producto,&fila_clientes1.front());
+		
+		werase(cliente_actual1);
+		mvwprintw(cliente_actual1,2,2,"Cliente: %d",n_cliente);
+		mvwprintw(cliente_actual1,3,2,"N items: %d",fila_clientes1.front().n_items);
+		box(cliente_actual1,0,0);
+		wrefresh(cliente_actual1);
+		while(t1.joinable())
+		{
+			//vuelve a refrescar buffer
+			for(int i=0;i<PRODUCTOS;i++){
+				werase(buffer_caja1[i]);
+				box(buffer_caja1[i],0,0);
+				mut.lock();
+				mvwprintw(buffer_caja1[i],3,2,productos[buff1.buffer[i]].c_str());
+				mut.unlock();
+
+				wrefresh(buffer_caja1[i]);
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			
+		}
+		n_cliente++;
+		fila_clientes1.pop();
+		
+	}
+
+	return;
+
+
+
+
+
+
+}
 
 int rellenar_fila(queue<cliente> &fila, cliente c,int n_clientes)//rellena la fila con n_clientes
 {
@@ -161,7 +218,7 @@ int rellenar_fila(queue<cliente> &fila, cliente c,int n_clientes)//rellena la fi
 	{
 		c.relleno_canasta();
 		n_items_totales_caja+=c.n_items;
-		c.miliseg=50;
+		c.miliseg=1000;
 		fila.push(c);
 	}
 	return n_items_totales_caja;//se retorna los items totales de la caja
@@ -177,7 +234,7 @@ int main()
     queue<cliente> clientes_caja1;//fila de clientes para caja1
     cliente c_caja1(&buff1);//clientes caja 1 usan buffer1
     cajero caja1(&buff1);//cajero 1 buffer 1
-
+    int items_total_caja1=0;
     //elementos caja2
     queue<cliente> clientes_caja2;//fila de clientes para caja2
     cliente c_caja2(&buff2);//clientes caja 2 usan buffer2
@@ -215,6 +272,8 @@ int main()
     box(menuwin,0,0);
     refresh();
     wrefresh(menuwin);
+
+    int y_caja1=(altura_titulo+2)+8+4;//coordenada y caja1 es altura y coordenadas de cosas anteriores + 4 para que tenga espacio
 
     keypad(menuwin,true); //habilitar flechas
 
@@ -259,7 +318,10 @@ int main()
         {
             switch(highlight){
                 case 0:
-			//ventana_inicio();
+			//inicializacion fila caja1
+			n_clientes=rand()%10+1;
+			items_total_caja1=rellenar_fila(clientes_caja1, c_caja1,n_clientes);
+			ventana_inicio(y_caja1,clientes_caja1,caja1,items_total_caja1);
 			break;
 
 		case 1:

@@ -42,7 +42,7 @@ class cliente{
 		this->n_items=(rand()%(N_item_max-1))+1;//cantidad de items en canasta es aleatorio entre 1-N_item_max
 		for(int i=0;i< this->n_items;i++)
 		{
-			this->canasta[i]=rand()%9;//item aleatorio, valor para printear despues esta entre 0-9
+			this->canasta[i]=(rand()%8)+1;//item aleatorio, valor para printear despues esta entre 0-9
 		}
 	};
 	//funcion para entregar items al buffer, es la del profe
@@ -91,6 +91,8 @@ class cajero{
 
 				//Seccion critica
 				int item = dir_buffer->buffer[dir_buffer->out];
+				dir_buffer->buffer[dir_buffer->out]=0;
+
 				dir_buffer->out = (dir_buffer->out + 1) % B_size;
 				dir_buffer->salida=item;//item que va saliendo
 
