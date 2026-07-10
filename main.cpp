@@ -152,9 +152,80 @@ void config_tiempos_valores(int &valor_tiempo){
         }
     }
 };
+mutex mut_curses;//si se llama elementos de curses al mismo tiempo se tiende a corromper la pantalla
+void correr_caja(queue<cliente> &fila_clientes,WINDOW *buffer_caja[B_size], WINDOW *cliente_actual,buffers *b)
+{
+	//funcion corre un hilo extra que va correr
+	//metodo de cliente para que empieze a ver el buffer
+	//el loop de la funcion es para que se vacie
+	//la fila de clientes y se vaya actualizando la parte visual
+	
+	mut_curses.lock();
+	box(cliente_actual,0,0);
+	refresh();
+	mut_curses.unlock();
+	int n_cliente1=1;
 
-void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero caja1, int item_t_c1,queue<cliente> fila_clientes1,cajero caja1){
+	while(!fila_clientes.empty())
+	{
+		atomic<bool> terminado{true};// bool que va a avisar cuando acabe el thread, es atomic porque se usa para sincronizar threads
 
+		//expresion lambda que va a correr en hilo
+		//es el movimiento cliente en el buffer
+		//cuando termina el bool queda de false para acabar loop que actualiza
+		thread t1([&fila_clientes, &terminado](){
+				fila_clientes.front().cliente_producto();
+				terminado = false;
+				});
+
+
+		mut_curses.lock();
+		werase(cliente_actual);
+		mvwprintw(cliente_actual,2,2,"Cliente: %d",n_cliente1);
+		mvwprintw(cliente_actual,3,2,"N items: %d",fila_clientes.front().n_items);
+		box(cliente_actual,0,0);
+		
+		wrefresh(cliente_actual);
+		mut_curses.unlock();
+		
+		//while de refrescar pantalla corre mientras no haya terminado thread
+		while(terminado)
+		{
+			//vuelve a refrescar buffer
+			for(int i=0;i<B_size;i++){
+				mut_curses.lock();
+				werase(buffer_caja[i]);
+				box(buffer_caja[i],0,0);
+
+				mut.lock();//mutex acceso buffer
+				mvwprintw(buffer_caja[i],3,2,productos[b->buffer[i]].c_str());//dentro de la caja i, le pone el string 
+												 //que corresponde a la posicion que esta 
+												 //guardada en el buffer
+				mut.unlock();
+
+				wrefresh(buffer_caja[i]);
+				mut_curses.unlock();
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			
+		}
+		t1.join();//se llama por si acaso
+		n_cliente1++;
+		fila_clientes.pop();
+		
+	}
+
+}
+// funcion recibe cajas con sus filas iniciadas y con la cantidad de items maximos a usar por fila. tambien la coordenada y, para dibujar
+void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero caja1, int item_t_c1,queue<cliente> fila_clientes2,cajero caja2, int item_t_c2){
+
+
+	//Funcion va a correr 4 hilos
+	//1 para cada caja y 1 para cada fila de clientes
+
+
+
+	int n_cajas= 2;//puede ser 1 o 2
 
 	int ANCHO_PRODUCTO = 14;//tamaño de string + espacios
 	int ALTO_CAJERO = 5;//alto de cada caja
@@ -164,6 +235,7 @@ void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero c
 	WINDOW *buffer_caja1[B_size];
 	WINDOW *buffer_caja2[B_size];
 
+	//inicializacion cajas
 	for (int i =0;i<PRODUCTOS;i++)
 	{
 		buffer_caja1[i]=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,5+i*ANCHO_PRODUCTO);
@@ -174,52 +246,35 @@ void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero c
 		wrefresh(buffer_caja2[i]);
 		refresh();
 	}
-
-	thread t2(&cajero::cajero_productos,&caja1,item_t_c1);//parte cajero
-
-	WINDOW *cliente_actual1=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,5+ANCHO_PRODUCTO*B_size);
-	mvprintw(coordenaday_caja1-2, 5+ANCHO_PRODUCTO*B_size,"Clientes totales: %ld",fila_clientes1.size());
-	refresh();
-	box(cliente_actual1,0,0);
-	int n_cliente=1;
-	while(!fila_clientes1.empty())
-	{
-		atomic<bool> terminado{false};// bool que va a avisar cuando acabe el thread
-
-		//expresion lambda que va a correr en hilo
-		//cuando termina el bool queda de true
-		thread t1([&fila_clientes1, &terminado](){
-				fila_clientes1.front().cliente_producto();
-				terminado = true;
-				});
-
-
-		werase(cliente_actual1);
-		mvwprintw(cliente_actual1,2,2,"Cliente: %d",n_cliente);
-		mvwprintw(cliente_actual1,3,2,"N items: %d",fila_clientes1.front().n_items);
-		box(cliente_actual1,0,0);
-		wrefresh(cliente_actual1);
-		while(!terminado)
-		{
-			//vuelve a refrescar buffer
-			for(int i=0;i<PRODUCTOS;i++){
-				werase(buffer_caja1[i]);
-				box(buffer_caja1[i],0,0);
-				mut.lock();
-				mvwprintw(buffer_caja1[i],3,2,productos[buff1.buffer[i]].c_str());
-				mut.unlock();
-
-				wrefresh(buffer_caja1[i]);
-			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			
-		}
-		t1.join();
-		n_cliente++;
-		fila_clientes1.pop();
-		
+	//cajero 1 y clientes 1
+	WINDOW *cliente_actual1=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,ancho_buffer_total);//ventana cliente actual
+	mvprintw(coordenaday_caja1-1, 5+ANCHO_PRODUCTO*B_size,"Clientes totales: %ld",fila_clientes1.size());//Mensaje total clientes
+	//funcion clientes
+	//cajero 2 
+	WINDOW *cliente_actual2;
+	if(n_cajas==2){
+		cliente_actual2=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja2,5+ANCHO_PRODUCTO*B_size);
+		mvprintw(coordenaday_caja2-1, 5+ANCHO_PRODUCTO*B_size,"Clientes totales: %ld",fila_clientes2.size());
+		//funcion clientes
 	}
-	t2.join();
+
+	//aca se corren threads
+	thread t1(&cajero::cajero_productos,&caja1,item_t_c1);//parte cajero 1
+	thread t2(&cajero::cajero_productos,&caja2,item_t_c2);//parte cajero 2
+
+	thread t3(correr_caja,ref(fila_clientes1),buffer_caja1, cliente_actual1,&buff1);//se corre la funcion en thread
+											    //ref() hace que el hilo reciba por
+											    //referencia el valor o si no solo lo copia
+	thread t4(correr_caja,ref(fila_clientes2),buffer_caja2, cliente_actual2,&buff2);//cliente 2
+
+	if(t1.joinable())
+		t1.join();
+	if(t2.joinable())
+		t2.join();
+	if(t3.joinable())
+		t3.join();
+	if(t4.joinable())
+		t4.join();
 	return;
 
 
@@ -257,6 +312,7 @@ int main()
     queue<cliente> clientes_caja2;//fila de clientes para caja2
     cliente c_caja2(&buff2);//clientes caja 2 usan buffer2
     cajero caja2(&buff2);//cajero 2 buffer 2
+    int items_total_caja2=0;
     
 
     initscr();               // Iniciar ncurses
@@ -339,7 +395,10 @@ int main()
 			//inicializacion fila caja1
 			n_clientes=rand()%10+1;
 			items_total_caja1=rellenar_fila(clientes_caja1, c_caja1,n_clientes);
-			ventana_inicio(y_caja1,clientes_caja1,caja1,items_total_caja1);
+			//inicializacion fila caja2;
+			n_clientes=rand()%10+1;
+			items_total_caja2=rellenar_fila(clientes_caja2, c_caja2,n_clientes);
+			ventana_inicio(y_caja1,clientes_caja1,caja1,items_total_caja1,clientes_caja2,caja2,items_total_caja2);
 			break;
 
 		case 1:
