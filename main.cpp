@@ -275,6 +275,13 @@ void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero c
 		t3.join();
 	if(t4.joinable())
 		t4.join();
+	for(int i=0;i<PRODUCTOS;i++){
+	    delwin(buffer_caja1[i]);
+	    delwin(buffer_caja2[i]);
+	}
+	delwin(cliente_actual1);
+	if(n_cajas==2) 
+	    delwin(cliente_actual2);	
 	return;
 
 
