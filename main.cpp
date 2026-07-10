@@ -4,6 +4,7 @@
 #include <vector>
 #include <queue>
 #include <curses.h>
+#include <atomic>
 
 using namespace std;
 //para imprimir
@@ -152,37 +153,53 @@ void config_tiempos_valores(int &valor_tiempo){
     }
 };
 
-void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero caja1, int item_t_c1){
-
+void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero caja1, int item_t_c1,queue<cliente> fila_clientes1,cajero caja1){
 
 
 	int ANCHO_PRODUCTO = 14;//tamaño de string + espacios
 	int ALTO_CAJERO = 5;//alto de cada caja
 	int PRODUCTOS = B_size;//tamaño buffer
 	int ancho_buffer_total= PRODUCTOS * ANCHO_PRODUCTO + (PRODUCTOS + 1);
+	int coordenaday_caja2=coordenaday_caja1+ ALTO_CAJERO+2;//coordenada y caja 2 basada en caja 1
 	WINDOW *buffer_caja1[B_size];
+	WINDOW *buffer_caja2[B_size];
+
 	for (int i =0;i<PRODUCTOS;i++)
 	{
 		buffer_caja1[i]=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,5+i*ANCHO_PRODUCTO);
+		buffer_caja2[i]=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja2,5+i*ANCHO_PRODUCTO);
 		box(buffer_caja1[i],0,0);
+		box(buffer_caja2[i],0,0);
 		wrefresh(buffer_caja1[i]);
+		wrefresh(buffer_caja2[i]);
 		refresh();
 	}
 
 	thread t2(&cajero::cajero_productos,&caja1,item_t_c1);//parte cajero
+
 	WINDOW *cliente_actual1=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,5+ANCHO_PRODUCTO*B_size);
+	mvprintw(coordenaday_caja1-2, 5+ANCHO_PRODUCTO*B_size,"Clientes totales: %ld",fila_clientes1.size());
+	refresh();
 	box(cliente_actual1,0,0);
 	int n_cliente=1;
 	while(!fila_clientes1.empty())
 	{
-		thread t1(&cliente::cliente_producto,&fila_clientes1.front());
-		
+		atomic<bool> terminado{false};// bool que va a avisar cuando acabe el thread
+
+		//expresion lambda que va a correr en hilo
+		//cuando termina el bool queda de true
+		thread t1([&fila_clientes1, &terminado](){
+				fila_clientes1.front().cliente_producto();
+				terminado = true;
+				});
+
+
 		werase(cliente_actual1);
 		mvwprintw(cliente_actual1,2,2,"Cliente: %d",n_cliente);
 		mvwprintw(cliente_actual1,3,2,"N items: %d",fila_clientes1.front().n_items);
 		box(cliente_actual1,0,0);
 		wrefresh(cliente_actual1);
-		while(t1.joinable())
+		while(!terminado)
 		{
 			//vuelve a refrescar buffer
 			for(int i=0;i<PRODUCTOS;i++){
@@ -194,14 +211,15 @@ void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero c
 
 				wrefresh(buffer_caja1[i]);
 			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			
 		}
+		t1.join();
 		n_cliente++;
 		fila_clientes1.pop();
 		
 	}
-
+	t2.join();
 	return;
 
 
