@@ -246,7 +246,7 @@ void correr_caja(cajero caja,WINDOW *buffer[B_size], buffers *b,int items)
 
 }
 // funcion recibe cajas con sus filas iniciadas y con la cantidad de items maximos a usar por fila. tambien la coordenada y, para dibujar
-void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero caja1, int item_t_c1,queue<cliente> fila_clientes2,cajero caja2, int item_t_c2){
+void ventana_inicio_2caja(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero caja1, int item_t_c1,queue<cliente> fila_clientes2,cajero caja2, int item_t_c2){
 
 
 	//Funcion va a correr 4 hilos
@@ -254,7 +254,6 @@ void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero c
 
 
 
-	int n_cajas= 2;//puede ser 1 o 2
 
 	int ANCHO_PRODUCTO = 14;//tamaño de string + espacios
 	int ALTO_CAJERO = 5;//alto de cada caja
@@ -276,24 +275,23 @@ void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero c
 		refresh();
 	}
 	//cajero 1 y clientes 1
-	WINDOW *cliente_actual1=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,ancho_buffer_total);//ventana cliente actual
-	mvprintw(coordenaday_caja1-1, 5+ANCHO_PRODUCTO*B_size,"Clientes totales: %ld",fila_clientes1.size());//Mensaje total clientes
-	//funcion clientes
+	WINDOW *cliente_actual1=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,ancho_buffer_total);//ventana cliente actual 1
+	mvprintw(coordenaday_caja1-1, 5+ANCHO_PRODUCTO*B_size,"Clientes totales: %ld",fila_clientes1.size());//Mensaje total clientes 1
 	//cajero 2 
-	WINDOW *cliente_actual2;
-	if(n_cajas==2){
-		cliente_actual2=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja2,ancho_buffer_total);
-		mvprintw(coordenaday_caja2-1, 5+ANCHO_PRODUCTO*B_size,"Clientes totales: %ld",fila_clientes2.size());
-		//funcion clientes
-	}
+	WINDOW *cliente_actual2=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja2,ancho_buffer_total);//ventana cliente actual 2
+		
+	mvprintw(coordenaday_caja2-1, 5+ANCHO_PRODUCTO*B_size,"Clientes totales: %ld",fila_clientes2.size());//Mensaje total clientes 2
 
 	//aca se corren threads
 	thread t1(correr_caja,caja1,buffer_caja1,&buff1,item_t_c1);//parte cajero 1
 	thread t2(correr_caja,caja2,buffer_caja2,&buff2,item_t_c2);//parte cajero 2
 
-	thread t3(correr_cliente,ref(fila_clientes1),buffer_caja1, cliente_actual1,&buff1);//se corre la funcion en thread
-											    //ref() hace que el hilo reciba por
-											    //referencia el valor o si no solo lo copia
+	/*se corre la funcion en thread
+	  ref() hace que el hilo reciba por
+	  referencia el valor o si no solo lo copia*/
+	thread t3(correr_cliente,ref(fila_clientes1),buffer_caja1, cliente_actual1,&buff1);//cliente 1
+											   
+											   
 	thread t4(correr_cliente,ref(fila_clientes2),buffer_caja2, cliente_actual2,&buff2);//cliente 2
 
 	if(t1.joinable())
@@ -309,8 +307,7 @@ void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero c
 	    delwin(buffer_caja2[i]);
 	}
 	delwin(cliente_actual1);
-	if(n_cajas==2) 
-	    delwin(cliente_actual2);	
+	delwin(cliente_actual2);	
 	return;
 
 
@@ -320,6 +317,57 @@ void ventana_inicio(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero c
 
 }
 
+void ventana_inicio_1caja(int coordenaday_caja1,queue<cliente> fila_clientes1,cajero caja1, int item_t_c1){
+
+
+	//Funcion va a correr 2 hilos
+	//1 para caja y 1 para fila de clientes
+
+
+
+
+	int ANCHO_PRODUCTO = 14;//tamaño de string + espacios
+	int ALTO_CAJERO = 5;//alto de cada caja
+	int PRODUCTOS = B_size;//tamaño buffer
+	int ancho_buffer_total= PRODUCTOS * ANCHO_PRODUCTO + (PRODUCTOS + 1);
+	int coordenaday_caja2=coordenaday_caja1+ ALTO_CAJERO+2;//coordenada y caja 2 basada en caja 1
+	WINDOW *buffer_caja1[B_size];
+
+	//inicializacion cajas
+	for (int i =0;i<PRODUCTOS;i++)
+	{
+		buffer_caja1[i]=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,5+i*ANCHO_PRODUCTO);
+		box(buffer_caja1[i],0,0);
+		wrefresh(buffer_caja1[i]);
+		refresh();
+	}
+	//cajero 1 y clientes 1
+	WINDOW *cliente_actual1=newwin(ALTO_CAJERO,ANCHO_PRODUCTO,coordenaday_caja1,ancho_buffer_total);//ventana cliente actual
+	mvprintw(coordenaday_caja1-1, 5+ANCHO_PRODUCTO*B_size,"Clientes totales: %ld",fila_clientes1.size());//Mensaje total clientes
+
+	//aca se corren threads
+	thread t1(correr_caja,caja1,buffer_caja1,&buff1,item_t_c1);//parte cajero 1
+
+	thread t2(correr_cliente,ref(fila_clientes1),buffer_caja1, cliente_actual1,&buff1);//se corre la funcion en thread
+											    //ref() hace que el hilo reciba por
+											    //referencia el valor o si no solo lo copia
+
+	if(t1.joinable())
+		t1.join();
+	if(t2.joinable())
+		t2.join();
+	for(int i=0;i<PRODUCTOS;i++){
+	    delwin(buffer_caja1[i]);
+	}
+	delwin(cliente_actual1);
+	return;
+
+
+
+
+
+
+}
 int rellenar_fila(queue<cliente> &fila, cliente c,int n_clientes)//rellena la fila con n_clientes
 {
 	int n_items_totales_caja=0;
@@ -337,7 +385,8 @@ int main()
 {
     srand(time(NULL));//inicializa random para el programa
 
-    int n_clientes=0;//numero de clientes que van a haber por caja
+    int n_clientes=0;//numero de clientes que van a haber por caja random en elswitch del menu
+    int n_cajas=0; //numero cajas random mas adelante tambien
 		    
     //elementos caja1
     queue<cliente> clientes_caja1;//fila de clientes para caja1
@@ -431,10 +480,17 @@ int main()
 			//inicializacion fila caja1
 			n_clientes=rand()%10+1;
 			items_total_caja1=rellenar_fila(clientes_caja1, c_caja1,n_clientes);
-			//inicializacion fila caja2;
-			n_clientes=rand()%10+1;
-			items_total_caja2=rellenar_fila(clientes_caja2, c_caja2,n_clientes);
-			ventana_inicio(y_caja1,clientes_caja1,caja1,items_total_caja1,clientes_caja2,caja2,items_total_caja2);
+			n_cajas=rand()%2+1;//numero 1 o 2
+			//si son 2 cajas, inicializa y llama funcion 2 cajas
+			//si es 1 caja nomas solo llama funcion 1 caja
+			if(n_cajas==2)
+			{
+				n_clientes=rand()%10+1;
+				items_total_caja2=rellenar_fila(clientes_caja2, c_caja2,n_clientes);
+				ventana_inicio_2caja(y_caja1,clientes_caja1,caja1,items_total_caja1,clientes_caja2,caja2,items_total_caja2);
+			}else{
+				ventana_inicio_1caja(y_caja1,clientes_caja1,caja1,items_total_caja1);
+			}
 			break;
 
 		case 1:
